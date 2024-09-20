@@ -18,6 +18,7 @@ from sqlmesh.core.config.connection import (
     SnowflakeConnectionConfig as SnowflakeConnectionConfig,
     SparkConnectionConfig as SparkConnectionConfig,
     TrinoConnectionConfig as TrinoConnectionConfig,
+    RisingWaveConnectionConfig as RisingWaveConnectionConfig,
     parse_connection_config as parse_connection_config,
 )
 from sqlmesh.core.config.gateway import GatewayConfig as GatewayConfig
