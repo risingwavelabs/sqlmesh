@@ -230,6 +230,7 @@ class SingletonConnectionPool(_TransactionManagementMixin):
     def get(self) -> t.Any:
         if not self._connection:
             self._connection = self._connection_factory()
+        print(f"self._connection: {self._connection}")
         return self._connection
 
     def get_attribute(self, key: str) -> t.Optional[t.Any]:

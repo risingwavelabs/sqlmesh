@@ -194,6 +194,9 @@ class StateReader(abc.ABC):
                 ahead: bool = False,
             ) -> None:
                 if ahead:
+                    import traceback
+                    traceback.print_stack()
+                    print(MIGRATIONS)
                     raise SQLMeshError(
                         f"{lib} (local) is using version '{local}' which is ahead of '{remote}' (remote). "
                         "Please run a migration ('sqlmesh migrate' command)."
@@ -208,6 +211,7 @@ class StateReader(abc.ABC):
                     f"{lib} (local) is using version '{local}' which is behind '{remote}' (remote).{upgrade_suggestion}"
                 )
 
+            print(SCHEMA_VERSION, versions.schema_version, versions.sqlmesh_version)
             if SCHEMA_VERSION != versions.schema_version:
                 raise_error(
                     "SQLMesh",

@@ -125,6 +125,7 @@ class EngineAdapter:
         self._extra_config = kwargs
         self._register_comments = register_comments
         self._pre_ping = pre_ping
+        print("Hello, use father's init")
 
     def with_log_level(self, level: int) -> EngineAdapter:
         adapter = self.__class__(
@@ -1159,6 +1160,9 @@ class EngineAdapter:
         if order_projections:
             query = self._order_projections_and_filter(query, columns_to_types)
         self.execute(exp.insert(query, table_name, columns=list(columns_to_types)))
+        print(f"Inserted into {table_name} with query: {query}")
+        import time
+        # time.sleep(1)
 
     def insert_overwrite_by_partition(
         self,
@@ -1946,6 +1950,9 @@ class EngineAdapter:
     @contextlib.contextmanager
     def session(self, properties: SessionProperties) -> t.Iterator[None]:
         """A session context manager."""
+        print("-" * 100)
+        print("Session")
+        print("-" * 100)
         if self._is_session_active():
             yield
             return
@@ -1995,6 +2002,12 @@ class EngineAdapter:
         logger.log(self._execute_log_level, "Executing SQL: %s", sql)
 
     def _execute(self, sql: str, **kwargs: t.Any) -> None:
+        print("sql", sql)
+        # if "INSERT INTO" in sql:
+        #     import traceback
+        #     traceback.print_stack()
+        #     import time
+        #     time.sleep(20)
         self.cursor.execute(sql, **kwargs)
 
     @contextlib.contextmanager

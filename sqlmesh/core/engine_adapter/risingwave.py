@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 import typing as t
-from sqlglot import exp
+from sqlglot import Dialect, exp
 
 from sqlmesh.core.engine_adapter.base_postgres import BasePostgresEngineAdapter
 from sqlmesh.core.engine_adapter.mixins import (
@@ -22,7 +22,7 @@ from sqlmesh.core.engine_adapter.shared import (
 )
 
 if t.TYPE_CHECKING:
-    from sqlmesh.core._typing import TableName, SchemaName
+    from sqlmesh.core._typing import TableName, SchemaName, SessionProperties
     from sqlmesh.core.engine_adapter._typing import DF
     from sqlmesh.core.engine_adapter._typing import QueryOrDF
 
@@ -38,7 +38,7 @@ class RisingWaveEngineAdapter(
     DIALECT = "risingwave"
     SUPPORTS_INDEXES = True
     HAS_VIEW_BINDING = True
-    CURRENT_CATALOG_EXPRESSION = exp.column("current_catalog")
+    # CURRENT_CATALOG_EXPRESSION = exp.column("current_catalog")
     SUPPORTS_REPLACE_TABLE = False
     SCHEMA_DIFFER = SchemaDiffer(
         parameterized_type_defaults={
@@ -68,6 +68,42 @@ class RisingWaveEngineAdapter(
             },
         },
     )
+    
+    def __init__(
+        self,
+        connection_factory: t.Callable[[], t.Any],
+        dialect: str = "",
+        sql_gen_kwargs: t.Optional[t.Dict[str, Dialect | bool | str]] = None,
+        multithreaded: bool = False,
+        cursor_kwargs: t.Optional[t.Dict[str, t.Any]] = None,
+        cursor_init: t.Optional[t.Callable[[t.Any], None]] = None,
+        default_catalog: t.Optional[str] = None,
+        execute_log_level: int = logging.DEBUG,
+        register_comments: bool = True,
+        pre_ping: bool = False,
+        **kwargs: t.Any,
+    ):
+        super().__init__(connection_factory, dialect, sql_gen_kwargs, multithreaded, cursor_kwargs, cursor_init, default_catalog, execute_log_level, register_comments, pre_ping, **kwargs)
+        try:
+            sql = "SET RW_IMPLICIT_FLUSH TO true;"
+            print("*" * 100)
+            print("Executing rw implicit flush")
+            print("*" * 100)
+            self._execute(sql)
+        except Exception as e:
+            print("-" * 100)
+            print("Error executing rw implicit flush")
+            print(e)
+            print("-" * 100)
+    
+    def _begin_session(self, properties: SessionProperties) -> t.Any:
+        """Begin a new session."""
+        sql = "SET RW_IMPLICIT_FLUSH TO true;"
+        print("*" * 100)
+        print("Executing rw implicit flush")
+        print("*" * 100)
+        self._execute(sql)
+        
 
     def _fetch_native_df(
         self, query: t.Union[exp.Expression, str], quote_identifiers: bool = False

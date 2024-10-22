@@ -217,8 +217,12 @@ class EngineAdapterStateSync(StateSync):
                 self._snapshot_cache.put(snapshot)
 
     def _push_snapshots(self, snapshots: t.Iterable[Snapshot], overwrite: bool = False) -> None:
+        print("-------------------------")
+        print("pushing snapshot ", snapshots)
+        print("-------------------------")
         if overwrite:
             snapshots = tuple(snapshots)
+            print("deleting snapshots")
             self.delete_snapshots(snapshots)
 
         snapshots_to_store = []
@@ -261,6 +265,12 @@ class EngineAdapterStateSync(StateSync):
             environment.snapshots
         )
         if missing:
+            print("environment.snapshots ", environment.snapshots)
+            print("\n")
+            print("snapshots_exist ", self.snapshots_exist(environment.snapshots))
+            
+            import traceback
+            traceback.print_stack()
             raise SQLMeshError(
                 f"Missing snapshots {missing}. Make sure to push and backfill your snapshots."
             )
@@ -285,6 +295,9 @@ class EngineAdapterStateSync(StateSync):
                 != table_infos[name].qualified_view_name.for_environment(environment.naming_info)
             }
             if not existing_environment.expired:
+                print(f"existing_environment.expired {existing_environment.expired}")
+                print(f"existing_environment id {existing_environment.plan_id}")
+                print(f"previous plan id {environment.previous_plan_id}")
                 if environment.previous_plan_id != existing_environment.plan_id:
                     raise ConflictingPlanError(
                         f"Plan '{environment.plan_id}' is no longer valid for the target environment '{environment.name}'. "
@@ -386,13 +399,19 @@ class EngineAdapterStateSync(StateSync):
             .where(environment_filter, copy=False)
             .lock(copy=False)
         )
+        print(f"stored_plan_id_query {stored_plan_id_query}")
         stored_plan_id_row = self._fetchone(stored_plan_id_query)
 
         if not stored_plan_id_row:
             raise SQLMeshError(f"Missing environment '{environment.name}' can't be finalized")
 
         stored_plan_id = stored_plan_id_row[0]
+        print(f"stored_plan_id {stored_plan_id}")
+        print(f"stored plan id row {stored_plan_id_row}")
+        print(f"environment.plan_id {environment.plan_id}")
         if stored_plan_id != environment.plan_id:
+            import traceback
+            traceback.print_stack()
             raise SQLMeshError(
                 f"Plan '{environment.plan_id}' is no longer valid for the target environment '{environment.name}'. "
                 f"Stored plan ID: '{stored_plan_id}'. Please recreate the plan and try again"
@@ -1518,6 +1537,9 @@ class EngineAdapterStateSync(StateSync):
     def _snapshot_ids_exist(
         self, snapshot_ids: t.Iterable[SnapshotIdLike], table_name: exp.Table
     ) -> t.Set[SnapshotId]:
+        print("snapshot table name lookup:", table_name)
+        import time
+        # time.sleep(100)
         return {
             SnapshotId(name=name, identifier=identifier)
             for where in self._snapshot_id_filter(snapshot_ids)
@@ -1540,6 +1562,10 @@ class EngineAdapterStateSync(StateSync):
         if not name_identifiers:
             yield exp.false()
         elif self.engine_adapter.SUPPORTS_TUPLE_IN:
+            print("*" * 50)
+            print("support tuple in")
+            print(batches)
+            print("*" * 50)
             for identifiers in batches:
                 yield t.cast(
                     exp.Tuple,
@@ -1551,6 +1577,7 @@ class EngineAdapterStateSync(StateSync):
                     ),
                 ).isin(*identifiers)
         else:
+            print("not support tuple in")
             for identifiers in batches:
                 yield exp.or_(
                     *[
